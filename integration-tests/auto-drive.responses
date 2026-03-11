@@ -1,0 +1,2 @@
+{"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"functionCall":{"name":"spawn_background_validation","args":{"command":"echo 'test pass'"}}}],"role":"model"},"index":0}]}]}
+{"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"text":"Task complete"}],"role":"model"},"finishReason":"STOP","index":0}]}]}
