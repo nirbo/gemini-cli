@@ -58,7 +58,7 @@ export const autoCommand: SlashCommand = {
 
     coreEvents.emitFeedback(
       'info',
-      'Starting autonomous drive loop... (Hold on to your butts)',
+      'Starting auto-drive mode...',
     );
 
     // Turn on the footer UI indicator
