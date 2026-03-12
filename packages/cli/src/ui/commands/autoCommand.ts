@@ -14,20 +14,6 @@ export const autoCommand: SlashCommand = {
   kind: CommandKind.BUILT_IN,
   autoExecute: false,
   action: async (context: CommandContext, args?: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-    const isAutoDriveEnabled = (context.services.settings as any)?.merged
-      ?.experimental?.autoDrive;
-    if (
-      !isAutoDriveEnabled &&
-      process.env['GEMINI_CLI_SETTING_experimental_autoDrive'] !== 'true'
-    ) {
-      coreEvents.emitFeedback(
-        'error',
-        'Auto Drive is experimental and currently disabled. Enable it in your settings.',
-      );
-      return;
-    }
-
     const config = context.services.config;
     if (!config) {
       debugLogger.debug('Auto command: config is not available in context');
