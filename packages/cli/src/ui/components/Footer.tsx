@@ -317,6 +317,17 @@ export const Footer: React.FC = () => {
         );
         break;
       }
+      case 'auto-drive-indicator': {
+        if (uiState.isAutoDriveActive) {
+          addCol(
+            id,
+            header,
+            () => <Text color={theme.text.accent}>🚗 AUTO DRIVE</Text>,
+            13, // Length of "🚗 AUTO DRIVE" string representation roughly
+          );
+        }
+        break;
+      }
       case 'context-used': {
         addCol(
           id,

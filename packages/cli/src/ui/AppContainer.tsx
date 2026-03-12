@@ -234,11 +234,19 @@ export const AppContainer = (props: AppContainerProps) => {
   useMemoryMonitor(historyManager);
   const isAlternateBuffer = config.getUseAlternateBuffer();
   const [corgiMode, setCorgiMode] = useState(false);
+  const [isAutoDriveActive, setAutoDriveActive] = useState(false);
   const [forceRerenderKey, setForceRerenderKey] = useState(0);
   const [debugMessage, setDebugMessage] = useState<string>('');
   const [quittingMessages, setQuittingMessages] = useState<
     HistoryItem[] | null
   >(null);
+
+  // Reset auto drive indicator when the prompt finishes generating
+  useEffect(() => {
+    if (!historyManager.isPending && isAutoDriveActive) {
+      setAutoDriveActive(false);
+    }
+  }, [historyManager.isPending, isAutoDriveActive]);
   const [showPrivacyNotice, setShowPrivacyNotice] = useState<boolean>(false);
   const [themeError, setThemeError] = useState<string | null>(
     initializationResult.themeError,
@@ -913,6 +921,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       },
       setDebugMessage,
       toggleCorgiMode: () => setCorgiMode((prev) => !prev),
+      setAutoDriveActive,
       toggleDebugProfiler,
       dispatchExtensionStateUpdate,
       addConfirmUpdateExtensionRequest,
@@ -2166,6 +2175,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       isEditorDialogOpen,
       showPrivacyNotice,
       corgiMode,
+      isAutoDriveActive,
       debugMessage,
       quittingMessages,
       isSettingsDialogOpen,
@@ -2294,6 +2304,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       isEditorDialogOpen,
       showPrivacyNotice,
       corgiMode,
+      isAutoDriveActive,
       debugMessage,
       quittingMessages,
       isSettingsDialogOpen,

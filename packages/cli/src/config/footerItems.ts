@@ -28,6 +28,11 @@ export const ALL_ITEMS = [
     description: 'Current model identifier',
   },
   {
+    id: 'auto-drive-indicator',
+    header: 'auto',
+    description: 'Displays when Auto Drive is active',
+  },
+  {
     id: 'context-used',
     header: 'context',
     description: 'Percentage of context window used',
@@ -66,6 +71,7 @@ export const DEFAULT_ORDER = [
   'git-branch',
   'sandbox',
   'model-name',
+  'auto-drive-indicator',
   'context-used',
   'quota',
   'memory-usage',
@@ -82,6 +88,7 @@ export function deriveItemsFromLegacySettings(
     'git-branch',
     'sandbox',
     'model-name',
+    'auto-drive-indicator',
     'quota',
   ];
   const items = [...defaults];
@@ -93,6 +100,8 @@ export function deriveItemsFromLegacySettings(
 
   if (settings.ui.footer.hideCWD) remove(items, 'workspace');
   if (settings.ui.footer.hideSandboxStatus) remove(items, 'sandbox');
+  if (settings.ui.footer.hideAutoDriveIndicator)
+    remove(items, 'auto-drive-indicator');
   if (settings.ui.footer.hideModelInfo) {
     remove(items, 'model-name');
     remove(items, 'context-used');

@@ -119,6 +119,7 @@ export interface UIState {
   isEditorDialogOpen: boolean;
   showPrivacyNotice: boolean;
   corgiMode: boolean;
+  isAutoDriveActive: boolean;
   debugMessage: string;
   quittingMessages: HistoryItem[] | null;
   isSettingsDialogOpen: boolean;

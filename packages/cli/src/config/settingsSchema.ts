@@ -610,7 +610,18 @@ const SETTINGS_SCHEMA = {
             category: 'UI',
             requiresRestart: false,
             default: false,
-            description: 'Hide the model name and context usage in the footer.',
+            description:
+              'Hides the current model identifier from the CLI footer.',
+            showInDialog: true,
+          },
+          hideAutoDriveIndicator: {
+            type: 'boolean',
+            label: 'Hide Auto Drive Indicator',
+            category: 'UI',
+            requiresRestart: false,
+            default: false,
+            description:
+              'Hides the Auto Drive indicator from the CLI footer when /auto is active.',
             showInDialog: true,
           },
           hideContextPercentage: {
