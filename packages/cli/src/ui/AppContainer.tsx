@@ -241,12 +241,6 @@ export const AppContainer = (props: AppContainerProps) => {
     HistoryItem[] | null
   >(null);
 
-  // Reset auto drive indicator when the prompt finishes generating
-  useEffect(() => {
-    if (!historyManager.isPending && isAutoDriveActive) {
-      setAutoDriveActive(false);
-    }
-  }, [historyManager.isPending, isAutoDriveActive]);
   const [showPrivacyNotice, setShowPrivacyNotice] = useState<boolean>(false);
   const [themeError, setThemeError] = useState<string | null>(
     initializationResult.themeError,
@@ -957,6 +951,7 @@ Logging in with Google... Restarting Gemini CLI to continue.
       toggleDebugProfiler,
       setShortcutsHelpVisible,
       stableSetText,
+      setAutoDriveActive,
     ],
   );
 
@@ -1145,6 +1140,13 @@ Logging in with Google... Restarting Gemini CLI to continue.
     embeddedShellFocused,
     consumePendingHints,
   );
+
+  // Reset auto drive indicator when the prompt finishes generating
+  useEffect(() => {
+    if (streamingState === StreamingState.Idle && isAutoDriveActive) {
+      setAutoDriveActive(false);
+    }
+  }, [streamingState, isAutoDriveActive]);
 
   toggleBackgroundShellRef.current = toggleBackgroundShell;
   isBackgroundShellVisibleRef.current = isBackgroundShellVisible;

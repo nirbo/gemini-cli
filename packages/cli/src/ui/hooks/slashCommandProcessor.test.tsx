@@ -211,6 +211,7 @@ describe('useSlashCommandProcessor', () => {
             quit: mockSetQuittingMessages,
             setDebugMessage: vi.fn(),
             toggleCorgiMode: vi.fn(),
+            setAutoDriveActive: vi.fn(),
             toggleDebugProfiler: vi.fn(),
             dispatchExtensionStateUpdate: vi.fn(),
             addConfirmUpdateExtensionRequest: vi.fn(),
