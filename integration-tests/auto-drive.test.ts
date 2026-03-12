@@ -36,16 +36,28 @@ describe('Auto Drive /auto Command', () => {
     await rig.cleanup();
   });
 
-  test('executes an autonomous loop with background validation', async () => {
-    await rig.setup('executes an autonomous loop with background validation', {
-      fakeResponsesPath: join(import.meta.dirname, 'auto-drive.responses'),
-    });
+  test('executes an autonomous loop with subagent delegation and background validation', async () => {
+    await rig.setup(
+      'executes an autonomous loop with subagent delegation and background validation',
+      {
+        fakeResponsesPath: join(import.meta.dirname, 'auto-drive.responses'),
+      },
+    );
 
     const run = await rig.runInteractive();
 
     // Send the auto command
     await run.sendKeys('/auto dummy');
     await run.type('\r');
+
+    // Because this is mocked, we expect the agent to execute the subagent tool
+    await run.expectText('generalist');
+
+    // We expect it to review the output and call it AGAIN
+    await run.expectText('missing tests');
+
+    // Wait for the tool execution
+    await run.expectText('spawn_background_validation');
 
     // Wait for the success output from the mocked agent
     await run.expectText('Task complete');

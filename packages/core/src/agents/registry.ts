@@ -584,10 +584,12 @@ export class AgentRegistry {
   }
 
   /**
-   * Returns all active agent definitions.
+   * Returns all active agent definitions, excluding internal orchestrators.
    */
   getAllDefinitions(): AgentDefinition[] {
-    return Array.from(this.agents.values());
+    return Array.from(this.agents.values()).filter(
+      (def) => def.name !== 'auto-agent',
+    );
   }
 
   /**

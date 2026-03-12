@@ -1,2 +1,6 @@
-{"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"functionCall":{"name":"spawn_background_validation","args":{"command":"echo 'test pass'"}}}],"role":"model"},"index":0}]}]}
+{"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"functionCall":{"name":"generalist","args":{"request":"Draft the initial code for the auth module"}}}]},"index":0}]}]}
+{"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"text":"Subagent output: Drafted the module, but tests are missing."}],"role":"model"},"index":0}]}]}
+{"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"functionCall":{"name":"generalist","args":{"request":"The previous output was missing tests. Please add unit tests to the auth module."}}}]},"index":0}]}]}
+{"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"text":"Subagent output: Unit tests added successfully."}],"role":"model"},"index":0}]}]}
+{"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"functionCall":{"name":"spawn_background_validation","args":{"command":"npm test"}}}]},"index":0}]}]}
 {"method":"generateContentStream","response":[{"candidates":[{"content":{"parts":[{"text":"Task complete"}],"role":"model"},"finishReason":"STOP","index":0}]}]}

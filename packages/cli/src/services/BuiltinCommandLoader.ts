@@ -120,7 +120,7 @@ export class BuiltinCommandLoader implements ICommandLoader {
     const allDefinitions: Array<SlashCommand | null> = [
       aboutCommand,
       ...(this.config?.isAgentsEnabled() ? [agentsCommand] : []),
-      ...(this.config?.getSetting('experimental.autoDrive') ? [autoCommand] : []),
+      autoCommand,
       authCommand,
       bugCommand,
       {

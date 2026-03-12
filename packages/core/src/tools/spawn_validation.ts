@@ -4,88 +4,139 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { z } from 'zod';
-import { ToolBuilder } from './tools.js';
+import {
+  BaseDeclarativeTool,
+  BaseToolInvocation,
+  Kind,
+  type ToolResult,
+} from './tools.js';
+import type { MessageBus } from '../confirmation-bus/message-bus.js';
 import { createGhostWorktree } from '../utils/worktreeUtils.js';
 import { spawn } from 'node:child_process';
-import { debugLogger } from '../utils/debugLogger.js';
 import { getShellConfiguration } from '../utils/shell-utils.js';
+import { coreEvents } from '../utils/events.js';
+import { debugLogger } from '../utils/debugLogger.js';
+import { Type, type Schema } from '@google/genai';
+import { ToolErrorType } from './tool-error.js';
 
-const inputSchema = z.object({
-  command: z
-    .string()
-    .describe(
-      'The exact shell command to run for validation (e.g., "npm test").',
-    ),
-});
+export interface SpawnValidationParams {
+  command: string;
+}
 
-type InputType = z.infer<typeof inputSchema>;
+export class SpawnValidationTool extends BaseDeclarativeTool<
+  SpawnValidationParams,
+  ToolResult
+> {
+  constructor(messageBus: MessageBus) {
+    super(
+      'spawn_background_validation',
+      'Spawn Background Validation',
+      'Creates a background git worktree and spawns a validation command inside it. Returns immediately.',
+      Kind.Execute,
+      {
+        type: Type.OBJECT,
+        properties: {
+          command: {
+            type: Type.STRING,
+            description: 'The exact shell command to run (e.g., "npm test").',
+          },
+        },
+        required: ['command'],
+      } as Schema,
+      messageBus,
+    );
+  }
 
-export const spawnValidationTool = new ToolBuilder<InputType, string>()
-  .name('spawn_background_validation')
-  .description(
-    'Creates a background git worktree and spawns a validation command (like tests or build) inside it. Returns immediately.',
-  )
-  .inputSchema(inputSchema)
-  .executor(async (args, context) => {
-    const command = String(args.command);
+  protected override validateToolParamValues(
+    params: SpawnValidationParams,
+  ): string | null {
+    if (!params.command) {
+      return 'Command is required.';
+    }
+    return null;
+  }
+
+  protected override createInvocation(
+    params: SpawnValidationParams,
+    messageBus: MessageBus,
+    toolName: string,
+    toolDisplayName: string,
+  ): SpawnValidationInvocation {
+    return new SpawnValidationInvocation(
+      params,
+      messageBus,
+      toolName,
+      toolDisplayName,
+    );
+  }
+
+  override getSchema() {
+    return {
+      name: this.name,
+      description: this.description,
+      parameters: this.parameterSchema as Schema,
+    };
+  }
+}
+
+export class SpawnValidationInvocation extends BaseToolInvocation<
+  SpawnValidationParams,
+  ToolResult
+> {
+  getDescription(): string {
+    return `Spawn background validation: ${String(this.params.command)}`;
+  }
+
+  override async execute(): Promise<ToolResult> {
+    const command = String(this.params.command);
 
     try {
       const worktreePath = await createGhostWorktree();
       const shellConfig = getShellConfiguration();
       const argsArray = [...shellConfig.argsPrefix, command];
 
-      const child = spawn(
-        shellConfig.executable,
-        argsArray,
-        {
-          cwd: worktreePath,
-          env: process.env,
-          windowsHide: true,
-        },
-      );
-
-      let output = '';
-
-      if (child.stdout) {
-        child.stdout.on('data', (data: { toString: () => string }) => {
-          output += data.toString();
-        });
-      }
-
-      if (child.stderr) {
-        child.stderr.on('data', (data: { toString: () => string }) => {
-          output += data.toString();
-        });
-      }
+      const child = spawn(shellConfig.executable, argsArray, {
+        cwd: worktreePath,
+        env: process.env,
+        windowsHide: true,
+      });
 
       child.on('close', (code: number | null) => {
         debugLogger.log(
           `[Background Validation] Command "${command}" exited with code ${String(code)} in ${worktreePath}`,
         );
-
-        context.messageBus.publish({
-            type: 'tool-execution-success',
-            toolName: 'spawn_background_validation',
-            result: {
-                command,
-                worktreePath,
-                code,
-                output: output.substring(0, 5000), // Keep it reasonable
-            }
-        });
+        coreEvents.emitFeedback(
+          'info',
+          `Background Validation completed: ${command} (Exit code: ${String(code)})`,
+        );
       });
 
       child.on('error', (err: Error) => {
         debugLogger.error(`[Background Validation] Failed to spawn:`, err);
+        coreEvents.emitFeedback(
+          'error',
+          `Background Validation failed: ${err.message}`,
+        );
       });
 
-      return `Validation command "${command}" started in background worktree: ${worktreePath}. The agent will be notified upon completion.`;
+      return {
+        returnDisplay: `Validation command "${command}" started in background worktree: ${worktreePath}.`,
+        llmContent: [
+          {
+            text: `Validation command started successfully in: ${worktreePath}`,
+          },
+        ],
+      };
     } catch (e) {
-      if (e instanceof Error) {
-          return `Failed to start background validation: ${e.message}`;
-      }
-      return `Failed to start background validation: ${String(e)}`;
+      const msg = e instanceof Error ? e.message : String(e);
+      return {
+        returnDisplay: `Failed to start background validation: ${msg}`,
+        llmContent: [{ text: `Failed: ${msg}` }],
+        error: {
+          type: ToolErrorType.EXECUTION_FAILED,
+          message: msg,
+        },
+      };
     }
-  })
-  .build();
+  }
+}
