@@ -22,6 +22,8 @@ import {
 } from './types.js';
 import { randomUUID } from 'node:crypto';
 import type { MessageBus } from '../confirmation-bus/message-bus.js';
+import { createGhostWorktree, cleanupGhostWorktree } from '../utils/worktreeUtils.js';
+import { debugLogger } from '../utils/debugLogger.js';
 
 const INPUT_PREVIEW_MAX_LENGTH = 50;
 const DESCRIPTION_MAX_LENGTH = 200;
@@ -92,6 +94,7 @@ export class LocalSubagentInvocation extends BaseToolInvocation<
     updateOutput?: (output: ToolLiveOutput) => void,
   ): Promise<ToolResult> {
     let recentActivity: SubagentActivityItem[] = [];
+    let activeGhostWorktree: string | null = null;
 
     try {
       if (updateOutput) {
@@ -221,42 +224,70 @@ export class LocalSubagentInvocation extends BaseToolInvocation<
         }
       };
 
+      let effectiveConfig = this.config;
+
+      if (this.params.useIsolatedWorktree === true) {
+        try {
+          activeGhostWorktree = await createGhostWorktree();
+          debugLogger.log(`[Subagent] Spawned in isolated ghost worktree: ${activeGhostWorktree}`);
+          
+          // Create a proxy of the config to override the target directory for the subagent
+          effectiveConfig = new Proxy(this.config, {
+            get(target, prop, receiver) {
+              if (prop === 'getTargetDir') {
+                return () => activeGhostWorktree;
+              }
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+              return Reflect.get(target, prop, receiver);
+            }
+          });
+        } catch (err) {
+          debugLogger.error('[Subagent] Failed to create ghost worktree:', err);
+          throw new Error(`Failed to isolate subagent: ${String(err)}`);
+        }
+      }
+
       const executor = await LocalAgentExecutor.create(
         this.definition,
-        this.config,
+        effectiveConfig,
         onActivity,
       );
 
-      const output = await executor.run(this.params, signal);
+        const output = await executor.run(this.params, signal);
 
-      if (output.terminate_reason === AgentTerminateMode.ABORTED) {
-        const progress: SubagentProgress = {
-          isSubagentProgress: true,
-          agentName: this.definition.name,
-          recentActivity: [...recentActivity],
-          state: 'cancelled',
-        };
+        if (output.terminate_reason === AgentTerminateMode.ABORTED) {
+          const progress: SubagentProgress = {
+            isSubagentProgress: true,
+            agentName: this.definition.name,
+            recentActivity: [...recentActivity],
+            state: 'cancelled',
+          };
 
-        if (updateOutput) {
-          updateOutput(progress);
+          if (updateOutput) {
+            updateOutput(progress);
+          }
+
+          const cancelError = new Error('Operation cancelled by user');
+          cancelError.name = 'AbortError';
+          throw cancelError;
         }
 
-        const cancelError = new Error('Operation cancelled by user');
-        cancelError.name = 'AbortError';
-        throw cancelError;
-      }
+        const displayResult = safeJsonToMarkdown(output.result);
+        
+        let worktreeNote = '';
+        if (activeGhostWorktree) {
+           worktreeNote = `\n[NOTE: Executed in Ghost Worktree. Path: ${activeGhostWorktree}]`;
+        }
 
-      const displayResult = safeJsonToMarkdown(output.result);
-
-      const resultContent = `Subagent '${this.definition.name}' finished.
+        const resultContent = `Subagent '${this.definition.name}' finished.
 Termination Reason: ${output.terminate_reason}
 Result:
-${output.result}`;
+${output.result}${worktreeNote}`;
 
-      const displayContent = `
+        const displayContent = `
 Subagent ${this.definition.name} Finished
 
-Termination Reason:\n ${output.terminate_reason}
+Termination Reason:\n ${output.terminate_reason}${worktreeNote}
 
 Result:
 ${displayResult}
@@ -320,6 +351,15 @@ ${displayResult}
         // We omit the 'error' property so that the UI renders our rich returnDisplay
         // instead of the raw error message. The llmContent still informs the agent of the failure.
       };
+    } finally {
+      if (activeGhostWorktree) {
+        try {
+          await cleanupGhostWorktree(activeGhostWorktree);
+          debugLogger.log(`[Subagent] Cleaned up ghost worktree: ${activeGhostWorktree}`);
+        } catch (cleanupErr) {
+          debugLogger.error(`[Subagent] Failed to clean up ghost worktree: ${activeGhostWorktree}`, cleanupErr);
+        }
+      }
     }
   }
 }

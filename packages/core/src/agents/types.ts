@@ -54,7 +54,9 @@ export const DEFAULT_MAX_TIME_MINUTES = 5;
  * Represents the validated input parameters passed to an agent upon invocation.
  * Used primarily for templating the system prompt. (Replaces ContextState)
  */
-export type AgentInputs = Record<string, unknown>;
+export type AgentInputs = Record<string, unknown> & {
+  useIsolatedWorktree?: boolean;
+};
 
 /**
  * Simplified input structure for Remote Agents, which consumes a single string query.
