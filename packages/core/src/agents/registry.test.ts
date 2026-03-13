@@ -139,9 +139,8 @@ describe('AgentRegistry', () => {
 
       await debugRegistry.initialize();
 
-      const agentCount = debugRegistry.getAllDefinitions().length;
       expect(debugLogSpy).toHaveBeenCalledWith(
-        `[AgentRegistry] Loaded with ${agentCount} agents.`,
+        `[AgentRegistry] Loaded with 4 agents.`,
       );
     });
 

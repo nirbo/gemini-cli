@@ -97,6 +97,7 @@ export class LocalAgentExecutor<TOutput extends z.ZodTypeAny> {
   private readonly compressionService: ChatCompressionService;
   private readonly parentCallId?: string;
   private hasFailedCompressionAttempt = false;
+  private readonly recentToolCallHashes: string[] = [];
 
   /**
    * Creates and validates a new `AgentExecutor` instance.
@@ -281,6 +282,17 @@ export class LocalAgentExecutor<TOutput extends z.ZodTypeAny> {
       };
     }
 
+    if (functionCalls.length > 0 && functionCalls[0].name !== TASK_COMPLETE_TOOL_NAME) {
+      // Create a deterministic hash of the function calls
+      const callHash = JSON.stringify(
+        functionCalls.map((c) => ({ name: c.name, args: c.args })),
+      );
+      this.recentToolCallHashes.push(callHash);
+      if (this.recentToolCallHashes.length > 5) {
+        this.recentToolCallHashes.shift();
+      }
+    }
+
     const { nextMessage, submittedOutput, taskCompleted, aborted } =
       await this.processFunctionCalls(
         functionCalls,
@@ -304,6 +316,24 @@ export class LocalAgentExecutor<TOutput extends z.ZodTypeAny> {
         terminateReason: AgentTerminateMode.GOAL,
         finalResult,
       };
+    }
+
+    // Heuristic Loop Detection Check
+    if (this.recentToolCallHashes.length >= 3) {
+      const lastThree = this.recentToolCallHashes.slice(-3);
+      if (lastThree[0] === lastThree[1] && lastThree[1] === lastThree[2]) {
+        this.emitActivity('THOUGHT_CHUNK', {
+          text: '⚠️ STUCK STATE DETECTED. Applying loop interruption protocol.',
+        });
+        if (!nextMessage.parts) {
+          nextMessage.parts = [];
+        }
+        nextMessage.parts.push({
+          text: '\n\n[SYSTEM OVERRIDE]: LOOP DETECTED. You have attempted the exact same tool call 3 times in a row without success. STOP whatever you are doing immediately. Reassess your approach entirely. Use a different tool, spawn a subagent to brainstorm, or ask the user for help. Do NOT repeat the previous action.',
+        });
+        // Clear the hash history so we don't spam the warning if it breaks the loop
+        this.recentToolCallHashes.length = 0;
+      }
     }
 
     // Task is not complete, continue to the next turn.
