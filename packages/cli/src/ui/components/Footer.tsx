@@ -218,17 +218,20 @@ export const Footer: React.FC = () => {
   let items =
     settings.merged.ui.footer.items ??
     deriveItemsFromLegacySettings(settings.merged);
-    
-  // Dynamically inject auto-drive-indicator if it isn't in the saved list, 
+
+  // Dynamically inject auto-drive-indicator if it isn't in the saved list,
   // ensuring users upgrading don't miss the feature unless explicitly hidden.
-  if (!items.includes('auto-drive-indicator') && !settings.merged.ui.footer.hideAutoDriveIndicator) {
-      const modelIdx = items.indexOf('model-name');
-      items = [...items];
-      if (modelIdx !== -1) {
-          items.splice(modelIdx + 1, 0, 'auto-drive-indicator');
-      } else {
-          items.push('auto-drive-indicator');
-      }
+  if (
+    !items.includes('auto-drive-indicator') &&
+    !settings.merged.ui.footer.hideAutoDriveIndicator
+  ) {
+    const modelIdx = items.indexOf('model-name');
+    items = [...items];
+    if (modelIdx !== -1) {
+      items.splice(modelIdx + 1, 0, 'auto-drive-indicator');
+    } else {
+      items.push('auto-drive-indicator');
+    }
   }
 
   const showLabels = settings.merged.ui.footer.showLabels !== false;

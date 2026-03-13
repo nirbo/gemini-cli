@@ -36,16 +36,24 @@ describe('autoCommand', () => {
     mockGetDefinition = vi.fn().mockReturnValue({ name: 'auto-agent' });
 
     mockContext = {
-      services: {
-        config: {
-          getAgentRegistry: vi.fn().mockReturnValue({
-            getDefinition: mockGetDefinition,
-          }),
+        services: {
+            config: {
+                getAgentRegistry: vi.fn().mockReturnValue({
+                    getDefinition: mockGetDefinition
+                })
+            },
+            settings: {
+              merged: {
+                experimental: {
+                  autoDrive: true
+                }
+              }
+            }
         },
-      },
-      ui: {
-        addItem: mockAddItem,
-      },
+        ui: {
+            addItem: mockAddItem,
+            setAutoDriveActive: vi.fn(),
+        }
     } as unknown as CommandContext;
   });
 

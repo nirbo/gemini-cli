@@ -26,6 +26,7 @@ import {
 
 import { getErrorMessage } from '../utils/errors.js';
 import { summarizeToolOutput } from '../utils/summarizer.js';
+import { truncateMiddle } from '../utils/string-utils.js';
 import {
   ShellExecutionService,
   type ShellExecutionConfig,
@@ -353,10 +354,12 @@ export class ShellToolInvocation extends BaseToolInvocation<
       } else {
         // Create a formatted error string for display, replacing the wrapper command
         // with the user-facing command.
-        const llmContentParts = [`Output: ${result.output || '(empty)'}`];
+        const llmContentParts = [
+          `Output: ${truncateMiddle(result.output || '(empty)')}`,
+        ];
 
         if (result.error) {
-          const finalError = result.error.message.replaceAll(
+          const finalError = truncateMiddle(result.error.message).replaceAll(
             commandToExecute,
             this.params.command,
           );

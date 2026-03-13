@@ -472,6 +472,7 @@ export class ToolRegistry {
       ) ?? new Set([]);
     const activeTools: AnyDeclarativeTool[] = [];
     for (const tool of this.allKnownTools.values()) {
+      if (tool.name === 'auto-agent') continue;
       if (this.isActiveTool(tool, excludedTools)) {
         activeTools.push(tool);
       }

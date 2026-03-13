@@ -42,10 +42,7 @@ export const autoCommand: SlashCommand = {
       return;
     }
 
-    coreEvents.emitFeedback(
-      'info',
-      'Starting auto-drive mode...',
-    );
+    coreEvents.emitFeedback('info', 'Starting auto-drive mode...');
 
     // Turn on the footer UI indicator
     context.ui.setAutoDriveActive(true);

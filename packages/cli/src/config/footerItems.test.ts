@@ -19,6 +19,7 @@ describe('deriveItemsFromLegacySettings', () => {
       'git-branch',
       'sandbox',
       'model-name',
+      'auto-drive-indicator',
       'quota',
     ]);
   });
@@ -84,6 +85,7 @@ describe('deriveItemsFromLegacySettings', () => {
     expect(items).toEqual([
       'git-branch',
       'sandbox',
+      'auto-drive-indicator',
       'context-used',
       'memory-usage',
     ]);

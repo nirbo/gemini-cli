@@ -18,6 +18,7 @@ import { coreEvents } from '../utils/events.js';
 import { debugLogger } from '../utils/debugLogger.js';
 import { Type, type Schema } from '@google/genai';
 import { ToolErrorType } from './tool-error.js';
+import { truncateMiddle } from '../utils/string-utils.js';
 
 export interface SpawnValidationParams {
   command: string;
@@ -74,6 +75,7 @@ export class SpawnValidationTool extends BaseDeclarativeTool<
     return {
       name: this.name,
       description: this.description,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       parameters: this.parameterSchema as Schema,
     };
   }
@@ -128,7 +130,7 @@ export class SpawnValidationInvocation extends BaseToolInvocation<
         ],
       };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = truncateMiddle(e instanceof Error ? e.message : String(e));
       return {
         returnDisplay: `Failed to start background validation: ${msg}`,
         llmContent: [{ text: `Failed: ${msg}` }],
